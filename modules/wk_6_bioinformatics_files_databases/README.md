@@ -1,0 +1,1 @@
+# Week 6: Bioinformatics File Formats and Databases
