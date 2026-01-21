@@ -31,7 +31,13 @@ Homework should be submitted on Canvas for Grading.  Include an AI statement.
 [Week 1 Homework](03_HomeworkAssignment_Python.ipynb)
 
 ## Additional Resources
-[Simple Guide to Python](Simple_Guide_to_Python.docx)
+- [Simple Guide to Python](Simple_Guide_to_Python.docx)
+
+- [Pathlib Tutorial](https://realpython.com/python-pathlib/)  
+  A clear, Python-specific guide to working with files, folders, and paths using `pathlib`
 
 
-[Email Eliud for Help](mailto:eliud.rivashernandez@colostate.edu)
+- [Email Eliud for Help](mailto:eliud.rivashernandez@colostate.edu)
+
+
+##### Footnote: This README was developed with assistance from CoPilot
