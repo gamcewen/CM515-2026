@@ -1,4 +1,4 @@
-# Week 3: GitHub and Reproducability
+# Week 3: GitHub and Reproducibility
 Instructors: Dmitri Svetlov and Kira Vasquez-Kapit
 
 ## Learning Objectives and Significance
