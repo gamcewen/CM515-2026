@@ -5,7 +5,7 @@
 | Marisa Foster |               |               |               |
 | Ayda Lewis |               |               |               |
 | Katie Markstein |               |               |               |
-| Gavin McEwen |               |               |               |
+| Gavin McEwen |gamcewen   | gmcewen@colostate.edu    | fun          |
 | Cody Plaisance |               |               |               |
 | Grissy Sime Mora |               |               |               |
 | Juelle St Clair |               |               |               |
