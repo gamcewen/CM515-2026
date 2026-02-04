@@ -1,4 +1,4 @@
-| Name  | GitHub Username and Link | Email and Link | Image |
+| Name  | GitHub Username and Link | Email and Link | One word to represent you |
 | ------------- | ------------- | ------------- | ------------- |
 | Jay Adams |               |               |               |
 | Ryan Cleaves |               |               |               |
