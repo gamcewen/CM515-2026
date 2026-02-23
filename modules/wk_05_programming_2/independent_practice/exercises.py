@@ -22,7 +22,15 @@ def check_equivalence(seq_1, seq_2):
 
     ### YOUR CODE BELOW HERE ###
 
-    print("\nReplace this with your code!\n")
+    # Takes as input two strings
+    # If they are equivalent, returns True
+    # If they are not equivalent, returns False
+    if seq_1 == seq_2:
+        are_equivalent = True
+    else:
+        are_equivalent = False
+    
+    return are_equivalent
 
     ### YOUR CODE ABOVE HERE ###
 
@@ -32,7 +40,13 @@ def get_variants(seq_1, seq_2):
 
     ### YOUR CODE BELOW HERE ###
 
-    print("\nReplace this with your code!\n")
+    # Takes as input two strings
+    # Returns a list of positions where they differ
+    # If they are equivalent, returns an empty list
+    variant_list = []
+    for i in range(len(seq_1)):
+        if seq_1[i] != seq_2[i]:
+            variant_list.append(i)
 
     ### YOUR CODE ABOVE HERE ###
 
@@ -42,14 +56,26 @@ def get_variants(seq_1, seq_2):
 # Note: Technically, there are some sequences that could match multiple types. You can ignore these edge cases for this exercise.
 def get_seq_type(seq):
 
-    # You may use these lists if you want to!
+    # List of DNA nucleotide one-letter codes, RNA nucleotide one-letter codes, and amino acid one-letter codes
+    
     dna_chars = ["A", "G", "C", "T"]
     rna_chars = ["A", "G", "C", "U"]
-    aa_chars = codon_dict.values().unique()
+    aa_chars = codon_dict.values()
 
     ### YOUR CODE BELOW HERE ###
-
-    print("\nReplace this with your code!\n")
+    # If all characters in a string are DNA one-letter codes, returns 'DNA'
+    # If all characters in a string are RNA one-letter codes, returns 'RNA'
+    # If all characters in a string are amino acid one-letter codes, returns 'protein'
+    # If string contains characters that are not DNA, RNA, or amino acid one-letter codes, returns 'unknown'
+    # Warning: Will default to 'DNA' if it is RNA or protein that contains only DNA one-letter codes
+    if all(i in dna_chars for i in seq):
+        seq_type = "DNA"
+    elif all(i in rna_chars for i in seq):
+        seq_type = "RNA"
+    elif all(i in aa_chars for i in seq):
+        seq_type = "protein"
+    else:
+        seq_type = "unknown"
 
     ### YOUR CODE ABOVE HERE ###
 
@@ -65,11 +91,41 @@ def split_rna_to_codons(rna_seq):
 # This function takes two RNA string sequences and returns the type of point mutation that differentiates them: silent, missense, or nonsense. 
 # Return "none" if the sequences are identical. You can assume there is at most one point mutation between the two sequences, and that the sequences are of equal length.
 # Hint: You can use the functions you already wrote above, and/or get_protein_seq() from last week's assignment 2.
+
+def get_protein_seq(list_of_codons):
+
+    ### YOUR CODE BELOW HERE ###
+
+    # creates an empty list to store the output
+    output_list = []
+    for codon in list_of_codons:
+         # check to see if each codon is in the codon dictionary, if it is add the corresponding one letter AA code to the ouput list
+        if codon in codon_dict:
+            output_list.append(codon_dict[codon])
+        # check to see if the codon is not in the codon dictionary, if it is not, add 'none' to the output list
+        else:
+            output_list.append('none')
+    return output_list
+
 def type_of_point_mutation(seq_1, seq_2):
 
     ### YOUR CODE BELOW HERE ###
 
-    print("\nReplace this with your code!\n")
+    # This function takes two RNA string sequences and returns the type of point mutation that differentiates them
+    # If RNA sequences are identical, returns 'none'
+    # If RNA sequences are not identical, but protein sequences are identical, returns 'silent'
+    # If RNA sequences and protein sequences are not identical, but there are no premature stop codons, returns missense
+    # If there are premature stop codons, returns nonsense
+    protein_1 = get_protein_seq(split_rna_to_codons(seq_1))
+    protein_2 = get_protein_seq(split_rna_to_codons(seq_2))
+    if seq_1 == seq_2:
+        mutation_type = "none"
+    elif seq_1 != seq_2 and protein_1 == protein_2:
+        mutation_type = "silent"
+    elif seq_1 != seq_2 and protein_1 != protein_2 and all(str(i).isalpha() for i in protein_1) and all(str(i).isalpha() for i in protein_2):
+        mutation_type = "missense"
+    elif "*" in protein_1 or "*" in protein_2:
+        mutation_type = "nonsense"
 
     ### YOUR CODE ABOVE HERE ###
 
@@ -83,7 +139,9 @@ def list_files():
 
     ### YOUR CODE BELOW HERE ###
 
-    print("\nReplace this with your code!\n")
+    # This function looks in the current directory and returns the list of files present
+    current_directory = os.getcwd()
+    files_list = os.listdir(current_directory)
 
     ### YOUR CODE ABOVE HERE ###
 
@@ -92,9 +150,16 @@ def list_files():
 # This function returns a list of all the header lines (start with '>') in a given FASTA file.
 def extract_fasta_headers(filepath):
 
-    ### YOUR CODE BELOW HERE ###
+   ### YOUR CODE BELOW HERE ###
 
-    print("\nReplace this with your code!\n")
+    # This function takes as input the file path to a FASTA file and returns a list of the header lines
+    # Header lines are designated by starting with '>'
+    header_list = []
+    with open(filepath, 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            if line.startswith('>'):
+                header_list.append(line.strip())
 
     ### YOUR CODE ABOVE HERE ###
 
