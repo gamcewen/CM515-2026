@@ -6,7 +6,7 @@ Submission of a final project is worth 10% of the total course grade. Students s
 
 If none of the suggested projects listed below fit with what you would prefer to work on, you may propose your own project goals, scope, and submission criteria for approval.
 
-## Project Suggestion 2: Explore an unknown gene
+## Project Suggestion 2: Explore a gene of unknown function
 
 Select a gene of unknown function for a specific species. Using tools presented in class and available sequence data, reference genomes, and annotations, develop hypotheses for the possible function(s) of the selected gene (e.g. predicted structure, sequence homology, phylogenetic distribution, etc.). Submit all code and a brief writeup to summarize your findings and hypotheses. 
 
@@ -21,5 +21,9 @@ Write code in any subset of languages we've covered in class (Bash, Python, R) t
 * What the code does/who should use it
 * What outputs (figures/tables/statistics) a user can expect
 * Version numbers of any packages/tools you used
+
+## Project Suggestion 5: Explore a protein family
+
+Use protein prediction and analysis tools to explore and summarize information about a protein family of your choice. Propose a question or set of smaller questions about the selected protein family that you could answer with publicly available data from databases such as NCBI, Ensembl, UniProt, or PDB. Submit a writeup with brief background about what is known about the protein family, which questions you decided to investigate, what inspired those questions, and your methods and progress towards summarizing your findings. 
 
 ## More projects will be suggested by instructors as the semester continues
