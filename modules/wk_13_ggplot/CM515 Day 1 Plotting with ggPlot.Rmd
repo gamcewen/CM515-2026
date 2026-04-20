@@ -103,7 +103,7 @@ We're closer now but we didn't specify a geometry.
 #03b#
 ####
 iris %>%
-  ggplot(aes(#put in a value for x and y based on the available columns))
+  ggplot(aes()#put in a value for x and y based on the available columns)
 
 ```
 
@@ -116,7 +116,7 @@ iris %>%
 Specifying aesthetics and a geometry are the minimum requirement to make
 a plot using ggplot(). In this case, I specified geom_point(). Notice
 that I added it to the ggplot() function with "+". "+" in this case acts
-like %\>% for all code involving ggplot.
+like %>% for all code involving ggplot.
 
 ```{r, echo=T, message=F, warning=F}
 ####
@@ -124,7 +124,7 @@ like %\>% for all code involving ggplot.
 ####
 iris %>%
   ggplot(aes(x = Sepal.Length, y = Sepal.Width)) +
-  geom_line
+  geom_point()
 
 
 ```
@@ -156,7 +156,7 @@ Shapes can be strings or numbers.
 
 iris %>%
   ggplot(aes(x = Sepal.Length, y = Sepal.Width)) +
-  geom_point(#try customizing your points)
+  geom_line()#try customizing your points)
 
 ```
 
@@ -168,7 +168,7 @@ We can color points by a factor, which is typically a categorical
 variable, to highlight specific trends. This is done by specifying
 "color" (sometimes abbreviated as "col") within the aes() function. In
 this case, we specify that the points should be colored according to the
-factor "Species".
+factor "Species". 
 
 Note: For some geometries and/or variables you may need to use "fill"
 instead of "color" but overall they function similarly.
@@ -205,13 +205,16 @@ species gets a unique shape and color.
 ####
 #05b#
 ####
-iris %>%
-  ggplot(aes(x = Sepal.Length, y = Sepal.Width, shape = Species)) +
-  geom_point() 
 
 iris %>%
   ggplot(aes(x = Sepal.Length, y = Sepal.Width, color = Species, shape = Species)) +
   geom_point()
+
+iris %>%
+  ggplot(aes(x = Sepal.Length, y = Sepal.Width, shape = Species)) +
+  geom_point() 
+
+
 
 ```
 
