@@ -1,7 +1,7 @@
 ---
-title: "TidyR_homework"
-author: "YOUR NAME HERE"
-date: "2026-03-31"
+title: "TidyR_homework_mcewen"
+author: "Gavin McEwen"
+date: "2026-04-20"
 output: pdf_document
 ---
 
@@ -45,15 +45,13 @@ Identify at least 3 non-tidy characteristics of your data or things you would li
 
 * 1. Each set of sample measurement duplicates is preceded by a header row, so that the column headers appear multiple times in each column.
 
-* 2. The size values (in nm) and the intensity values corresponding to those sizes are contained in the same row.
+* 2. The size values (in nm) and the intensity values corresponding to those sizes are contained in the same row. They should each be contained in different columns.
 
-* 3. The concentration, elemental composition, and time information is all contained in the sample name.
+* 3. The NP concentration and replicate number is all contained in the sample name.
 
 * 4. The "S/W Version" and "Serial Number" are useless information because they are the same for all samples.
 
 * 5. The measurement date and time contains characters, but I would like to convert it to numeric.
-
-* 6. The volumes data .
 
 Show any code you used to identify these characteristics:
 
@@ -74,25 +72,33 @@ dls_protein_corona_size_cleaned = dls_protein_corona_size %>%
     datetime = as.POSIXct(`Measurement Date and Time`,
                           format = "%A, %B %d, %Y %I:%M:%S %p"),
     measurement_time_numeric = hour(datetime) + minute(datetime)/60 + second(datetime)/3600) %>% #Converts "Measurement Date and Time" column to numeric decimal hours, addresses issue 5 above
-  select(-c(`Measurement Date and Time`)) #Removes "Measurement Date and Time" column
+  select(-c(`Measurement Date and Time`)) %>% #Removes "Measurement Date and Time" column
+  separate(`Sample Name`, into = c("sample_info", "replicate"), sep = " ") %>%
+  mutate(
+    replicate = as.integer(replicate), #Extracts replicate information and adds it to the new column "replicate"
+    concentration = str_extract(`sample_info`, "(?<=_)\\d+\\.?\\d*(?=mg/mL)") #Extracts NP concentration in mg/mL and adds it to the new column "concentration", addresses issue 3 above
+  )
 
 sizes_and_intensities = dls_protein_corona_size_cleaned %>% 
-  select(c(`Sample Name`, starts_with("Sizes"), starts_with("Intensities"))) #Creates a new dataframe specifically for intensity versus size data
+  select(c(`sample_info`, starts_with("Sizes"), starts_with("Intensities"))) #Creates a new dataframe specifically for intensity versus size data
 
 colnames(sizes_and_intensities)[72:141] = sizes_and_intensities[1, 2:71] #Renames column headers of intensity data with size values from row 1, addresses issue 2 above
 
 sizes_and_intensities_cleaned = sizes_and_intensities %>%
   select(-c(starts_with("Sizes"))) %>% #Removes repetitive size data
-  pivot_longer(cols = -1, names_to = "size_nm", values_to = "intensity_percent") #Pivots table so that size values and intensities are in separate columns
+  pivot_longer(cols = -1, names_to = "size_nm", values_to = "intensity_percent") #Pivots table so that size values and intensities are in separate columns, addresses issue 2 above
 
-sizes_and_intensities_cleaned$size_nm = as.numeric(sizes_and_intensities_cleaned$size_nm)
-sizes_and_intensities_cleaned$intensity_percent = as.numeric(sizes_and_intensities_cleaned$intensity_percent)
+sizes_and_intensities_cleaned$size_nm = as.numeric(sizes_and_intensities_cleaned$size_nm) #Converts "size_nm" values to numeric format
+sizes_and_intensities_cleaned$intensity_percent = as.numeric(sizes_and_intensities_cleaned$intensity_percent) #Converts "intensity_percent" values to numeric format
 
 dls_protein_corona_size_concentration = dls_protein_corona_size_cleaned %>%
-  select(-c(starts_with("Intensities"), starts_with("Sizes"), starts_with("Volumes"))) %>%
-  mutate(concentration = str_extract(`Sample Name`, "(?<=_)\\d+\\.?\\d*(?=mg/mL)") %>% as.factor()) %>%
-  drop_na(`concentration`) %>%
-  mutate(elapsed_time = `measurement_time_numeric` - `measurement_time_numeric`[1])
+  select(-c(starts_with("Intensities"), starts_with("Sizes"), starts_with("Volumes"))) %>% #Creates a new dataframe specifically for average size (and associated PDI values) versus concentration or time
+  drop_na(`concentration`) %>% #Drops all rows with NA in the "concentration" column, as these are control samples
+  mutate(elapsed_time = `measurement_time_numeric` - `measurement_time_numeric`[1]) #Computes the elapsed time since the first measurement
+
+dls_protein_corona_size_concentration$`Z-Average (d.nm)` = as.numeric(dls_protein_corona_size_concentration$`Z-Average (d.nm)`) #Converts "Z-Average (d.nm)" values to numeric format
+dls_protein_corona_size_concentration$PdI = as.numeric(dls_protein_corona_size_concentration$PdI) #Converts "PdI" values to numeric format
+dls_protein_corona_size_concentration$concentration = as.factor(dls_protein_corona_size_concentration$concentration) #Converts "concentration" values to factors
 
 ```
 
@@ -111,23 +117,38 @@ NOTE: you do not have to use a formal stats test if you are not familiar! Feel f
 ```{r Q5}
 
 sizes_and_intensities_cleaned %>%
-  #filter(`Sample Name` == "SeNP_only_15min 1") %>%
   ggplot(aes(x=log(size_nm), y=intensity_percent)) +
   geom_point() +
-  facet_wrap(~ `Sample Name`)
+  facet_wrap(~ sample_info)
 
 dls_protein_corona_size_concentration %>%
-  ggplot(aes(x=elapsed_time, y=`Z-Average (d.nm)`, color=concentration)) +
-  geom_point()
+  group_by(sample_info, concentration) %>%
+  summarise(mean_size = mean(`Z-Average (d.nm)`),
+            mean_time = mean(elapsed_time),
+            sd_size = sd(`Z-Average (d.nm)`),
+            sd_time = sd(elapsed_time),
+            n = n(),
+            se_size = sd_size/sqrt(n),
+            se_time = sd_time/sqrt(n)) %>%
+  ggplot(aes(x=mean_time, y=mean_size, color = concentration)) +
+  geom_point() +
+  labs(x = "Elapsed time since initial measurement (hr)",
+       y = "Mean size (nm)",
+       title = "Increase in D(H) as a function of incubation time and NP concentration",
+       color = "Concentration (mg/mL)") +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) +
+  theme_classic()
 ```
 
 Provide the answer (in words) to your question below:
 
+For each concentration tested, the mean particle size (as measured by hydrodynamic radius) increases as incubation time increases. It appears to plateau, but longer incubation times are required to confirm this.
 
 ## Question 6 (4 points)
 
 Find two functions we haven't introduced you to that are a part of tidyR, dplyr, or other related tidyverse packages. Provide the function name (including the package it's from) and what it does.
 
+* 1. The relocate() function from the dplyr package will change the position of columns without removing them.
 
-
+* 2. The replace_na() function from the tidyR package will replace all NA values with a specific, known value
 
