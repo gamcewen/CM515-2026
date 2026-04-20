@@ -1,7 +1,7 @@
 ---
 title: "TidyR-Day2"
-author: "Meg Hemmerlein"
-date: "2026-03-31"
+author: "Gavin McEwen"
+date: "2026-04-14"
 output: html_document
 ---
 
@@ -19,18 +19,26 @@ triangle + line button --> run all previous code chunks
 
 ```{r load data}
 
+tortoise_body_condition = read_csv("cleaned_tortoiseBC.csv")
+
+clutch_size = read_csv("cleaned_clutchSize.csv")
+
 ```
 
 
 
 ```{r Questions of Interest 1}
-#### Does it seem easier to recapture male or female tortoises?
+#### Is it easier to recapture male or female tortoises?
 
 #### Let's plan out what we want
 # Which dataset should we use? 
 # Which variables? 
 # What do we actually need to do?
 # What functions should we use?
+
+sex_recapture = tortoise_body_condition %>%
+  group_by(sex) %>%
+  summarise(total_recapture = n())
 
 ```
 
@@ -45,9 +53,22 @@ triangle + line button --> run all previous code chunks
 # What do we actually need to do?
 # What functions should we use?
 
+season_recapture = tortoise_body_condition %>%
+  group_by(season) %>%
+  summarise(turtles = n())
+
 # For one individual 
 
+season_recapture = tortoise_body_condition %>%
+  filter(individual == "1006") %>%
+  group_by(season) %>%
+  summarise(turtles = n())
+
 # For all
+
+season_recapture = tortoise_body_condition %>%
+  group_by(individual, season) %>%
+  summarise(turtles = n())
 
 ```
 
@@ -62,6 +83,36 @@ triangle + line button --> run all previous code chunks
 # Which variables? 
 # What do we actually need to do?
 # What functions should we use?
+
+SCL = tortoise_body_condition %>%
+  filter(season == "Spring") %>%
+  filter(year %in% c(2016, 2017)) %>%
+  group_by(individual, year, locality) %>%
+  summarise(
+    SCL = first(straight_carapace_length_mm),
+    .groups = "drop"
+  )
+
+SCL_wide = SCL %>%
+  pivot_wider(
+    names_from = year,
+    values_from = SCL
+  )
+
+SCL_wide = SCL_wide %>%
+  drop_na() %>%
+  rename(
+    yr_2016 = `2016`,
+    yr_2017 = `2017`
+  ) %>%
+  mutate(growth_2016_2017 = yr_2017 - yr_2016)
+
+SCL_wide %>%
+  group_by(locality) %>%
+  summarise(
+    avg_growth = mean(growth_2016_2017)
+  )
+
 
 ```
 

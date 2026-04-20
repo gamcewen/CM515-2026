@@ -13,7 +13,7 @@ package_list <- c("dplyr", "readr", "tidyverse", "tidyr")
 
 for (pckg in package_list) {
   if (!requireNamespace(pckg, quietly = TRUE)) {
-    install.packages(cpkg, dependencies = TRUE)
+    install.packages(pckg, dependencies = TRUE)
   }
   library(pckg, character.only = TRUE)
 }
@@ -69,10 +69,12 @@ Great! We read it in! But what does this data look like? How did the authors for
 
 ```{r check body cond out}
 #how did R format the dataset?
-
+str(tortoise_body_condition)
+class(tortoise_body_condition)
 
 #what are the column names of the dataset?
-
+names(tortoise_body_condition)
+head(tortoise_body_condition)
 
 #what does the data look like?
 
@@ -110,27 +112,72 @@ In addition, let's make it look cleaner for us to use by:
 
 #fixing 1, 2, 3, and 4 (removing unwanted columns)
 #look at what we have
+names(tortoise_body_condition)
 
 #change it
+tortoise_body_condition %>%
+  select(-c(...1, res, log_BCI, loc_sex_cohort)) %>%
+  names()
 
 #did it do what we wanted?
 
+
 #fix 5 -- grouping by individual
 #look at our whole dataframe
+View(tortoise_body_condition)
 
 #how many rows belong to individual 1?
+length(which(tortoise_body_condition$ind == 1))
 
 #how many rows belong to each individual?
+tortoise_body_condition %>%
+  group_by(ind) %>%
+  summarise(numberTort = n())
 
+tortoise_body_condition %>%
+  select(-c(...1, res, log_BCI, loc_sex_cohort)) %>%
+  group_by(ind) %>%
+  View()
 
 #fix 6 -- sorting by year_recode
 #not currently ordered:
+head(tortoise_body_condition)
+
+tortoise_body_condition %>%
+  select(-c(...1, res, log_BCI, loc_sex_cohort)) %>%
+  group_by(ind) %>%
+  arrange(year_recode, .by_group = TRUE)
 
 #did this fix it?
 
 #fix 7 -- rename columns
 #check current state. what do the abbreviations mean? --> have to get from paper
 #did this fix it?
+names(tortoise_body_condition)
+
+tortoise_body_condition %>%
+  select(-c(...1, res, log_BCI, loc_sex_cohort)) %>%
+  group_by(ind) %>%
+  arrange(year_recode, .by_group = TRUE) %>%
+  ungroup() %>%
+  rename(
+    straight_carapace_length_mm = SCL,
+    body_mass_grams = BM,
+    bondy_condition_index = BCI,
+    individual = ind,
+    locality = loc
+  ) %>%
+relocate(
+  individual,
+  year,
+  year_recode,
+  season,
+  locality,
+  sex,
+  body_mass_grams,
+  bondy_condition_index,
+  straight_carapace_length_mm
+)
 
 #fix 8 -- change order of columns
 #what is the current order?
@@ -139,14 +186,130 @@ In addition, let's make it look cleaner for us to use by:
 #fix 9 -- recode 'locality' column values
 #what are all options of loc?
 #did this fix it?
+tortoise_body_condition %>% select(loc) %>% unique() #what are all options of loc?
+
+tortoise_body_condition %>%
+  dplyr::select(-c(...1, res, log_BCI, loc_sex_cohort)) %>% #fixes 1, 2, 3, and 4
+  group_by(ind) %>% 
+  arrange(year_recode, .by_group = TRUE) %>% 
+  ungroup() %>% 
+  rename(
+    straight_carapace_length_mm = SCL,
+    body_mass_grams = BM, 
+    body_condition_index = BCI,
+    individual = ind,
+    locality = loc
+  ) %>% 
+  relocate(
+    individual,
+    year,
+    year_recode,
+    season,
+    locality,
+    sex,
+    body_mass_grams,
+    body_condition_index,
+    straight_carapace_length_mm
+  ) %>% 
+  mutate( #creates new column(s)
+    locality = locality %>% #save new column to same name as old column (rewrites old column). can also give new column a new name and remove old column (via select()), but this maintains the names we added in a previous step
+      recode_values( #expand one letter values to full word values
+        "b" ~ "Beach",
+        "p" ~ "Plateau",
+        "k" ~ "Konjsko"
+      )
+  ) %>%
+  select(locality) %>%
+  unique() #did this fix it?
 
 #fix 10 -- recode 'season' column values
 #what are all options of season?
 #did this fix it?
+tortoise_body_condition %>% select(season) %>% unique() #what are all options of season?
+
+tortoise_body_condition %>%
+  dplyr::select(-c(...1, res, log_BCI, loc_sex_cohort)) %>% #fixes 1, 2, 3, and 4
+  group_by(ind) %>% 
+  arrange(year_recode, .by_group = TRUE) %>% 
+  ungroup() %>% 
+  rename(
+    straight_carapace_length_mm = SCL,
+    body_mass_grams = BM, 
+    body_condition_index = BCI,
+    individual = ind,
+    locality = loc
+  ) %>% 
+  relocate(
+    individual,
+    year,
+    year_recode,
+    season,
+    locality,
+    sex,
+    body_mass_grams,
+    body_condition_index,
+    straight_carapace_length_mm
+  ) %>% 
+  mutate( #creates new column(s)
+    locality = locality %>% #save new column to same name as old column (rewrites old column). can also give new column a new name and remove old column (via select()), but this maintains the names we added in a previous step
+      recode_values( #expand one letter values to full word values
+        "b" ~ "Beach",
+        "p" ~ "Plateau",
+        "k" ~ "Konjsko"
+      )
+  ) %>%
+  mutate(
+    season = season |>
+      dplyr::recode_values(
+        "sum" ~ "Summer",
+        "sp" ~ "Spring"
+      )
+  ) %>%
+  select(season) %>%
+  unique() #did this fix it?
 
 
 #save cleaned df to a new object
-tortoise_body_condition_cleaned <- tortoise_body_condition 
+tortoise_body_condition_cleaned <- tortoise_body_condition %>%
+  dplyr::select(-c(...1, res, log_BCI, loc_sex_cohort)) %>% #fixes 1, 2, 3, and 4
+  group_by(ind) %>% 
+  arrange(year_recode, .by_group = TRUE) %>% 
+  ungroup() %>% 
+  rename(
+    straight_carapace_length_mm = SCL,
+    body_mass_grams = BM, 
+    body_condition_index = BCI,
+    individual = ind,
+    locality = loc
+  ) %>% 
+  relocate(
+    individual,
+    year,
+    year_recode,
+    season,
+    locality,
+    sex,
+    body_mass_grams,
+    body_condition_index,
+    straight_carapace_length_mm
+  ) %>% 
+  mutate( #creates new column(s)
+    locality = locality %>% #save new column to same name as old column (rewrites old column). can also give new column a new name and remove old column (via select()), but this maintains the names we added in a previous step
+      recode_values( #expand one letter values to full word values
+        "b" ~ "Beach",
+        "p" ~ "Plateau",
+        "k" ~ "Konjsko"
+      )
+  ) %>%
+  mutate(
+    season = season |>
+      dplyr::recode_values(
+        "sum" ~ "Summer",
+        "sp" ~ "Spring"
+      )
+  )
+
+head(tortoise_body_condition_cleaned)
 
 ```
 
@@ -206,7 +369,26 @@ That's it for this one! Try it on your own by responding to the comments below:
 
 # Smaller and easier dataset to clean
 # with excel dates the only major issue.
-clutch_size_cleaned <- clutch_size #%>%
+clutch_size_cleaned <- clutch_size %>%
+  rename(
+  individual = ind,
+  locality = Locality,
+  straight_carapace_length_mm = SCL,
+  body_mass_grams = BM,
+  eggs = Eggs,
+  date = Date,
+  age = Age
+) %>%
+  mutate(date = as.Date(date, origin = "1899-12-30")) %>%
+  relocate(
+    individual,
+    age,
+    date,
+    locality,
+    eggs,
+    body_mass_grams,
+    straight_carapace_length_mm
+  )
 
 
 ```
@@ -234,7 +416,9 @@ write.table(clutch_size_cleaned, #name of dataframe
             row.names = F, 
             sep = ',', 
             col.names = T, 
-            quote = F) 
+            quote = F)
 
+head(clutch_size_cleaned)
+View(tortoise_body_condition_cleaned)
 ```
 

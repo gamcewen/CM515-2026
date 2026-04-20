@@ -1,0 +1,1 @@
+All relevant datasets and R-code are divided between folders: input (datasets), R (R-code), output (produced results such as model selection tables and model summaries), intermediates (produced datasets used for further analysis or graphs) and figures.

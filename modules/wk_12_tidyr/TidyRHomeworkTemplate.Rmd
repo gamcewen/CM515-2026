@@ -22,7 +22,20 @@ Show me the first *10 rows* of your data (1 point).
 ```{r Question 1}
 #load a dataset
 
+package_list <- c("dplyr", "readr", "tidyverse", "tidyr", "lubridate", "dedupewider")
+
+for (pckg in package_list) {
+  if (!requireNamespace(pckg, quietly = TRUE)) {
+    install.packages(pckg, dependencies = TRUE)
+  }
+  library(pckg, character.only = TRUE)
+}
+
+dls_protein_corona_size = read_csv("20250502.csv")
+
 #output the first 10 rows of your data
+
+head(dls_protein_corona_size, 10)
 
 ```
 
@@ -30,13 +43,17 @@ Show me the first *10 rows* of your data (1 point).
 
 Identify at least 3 non-tidy characteristics of your data or things you would like to change in this dataset (1 point ea):
 
-* 1. 
+* 1. Each set of sample measurement duplicates is preceded by a header row, so that the column headers appear multiple times in each column.
 
-* 2. 
+* 2. The size values (in nm) and the intensity values corresponding to those sizes are contained in the same row.
 
-* 3. 
+* 3. The concentration, elemental composition, and time information is all contained in the sample name.
 
-... [add more as needed]
+* 4. The "S/W Version" and "Serial Number" are useless information because they are the same for all samples.
+
+* 5. The measurement date and time contains characters, but I would like to convert it to numeric.
+
+* 6. The volumes data .
 
 Show any code you used to identify these characteristics:
 
@@ -50,13 +67,40 @@ Fix each of your issues. Use comments to show where each of your issues listed a
 
 ```{r Q3}
 
+dls_protein_corona_size_cleaned = dls_protein_corona_size %>%
+  filter(Type == "Size",) %>% #Removes interdigitated header rows, addresses issue 1 above
+  select(-c(`S/W Version`, `Serial Number`)) %>% #Removes "S/W Version" and "Serial Number" columns, addresses issue 4 above
+  mutate(
+    datetime = as.POSIXct(`Measurement Date and Time`,
+                          format = "%A, %B %d, %Y %I:%M:%S %p"),
+    measurement_time_numeric = hour(datetime) + minute(datetime)/60 + second(datetime)/3600) %>% #Converts "Measurement Date and Time" column to numeric decimal hours, addresses issue 5 above
+  select(-c(`Measurement Date and Time`)) #Removes "Measurement Date and Time" column
+
+sizes_and_intensities = dls_protein_corona_size_cleaned %>% 
+  select(c(`Sample Name`, starts_with("Sizes"), starts_with("Intensities"))) #Creates a new dataframe specifically for intensity versus size data
+
+colnames(sizes_and_intensities)[72:141] = sizes_and_intensities[1, 2:71] #Renames column headers of intensity data with size values from row 1, addresses issue 2 above
+
+sizes_and_intensities_cleaned = sizes_and_intensities %>%
+  select(-c(starts_with("Sizes"))) %>% #Removes repetitive size data
+  pivot_longer(cols = -1, names_to = "size_nm", values_to = "intensity_percent") #Pivots table so that size values and intensities are in separate columns
+
+sizes_and_intensities_cleaned$size_nm = as.numeric(sizes_and_intensities_cleaned$size_nm)
+sizes_and_intensities_cleaned$intensity_percent = as.numeric(sizes_and_intensities_cleaned$intensity_percent)
+
+dls_protein_corona_size_concentration = dls_protein_corona_size_cleaned %>%
+  select(-c(starts_with("Intensities"), starts_with("Sizes"), starts_with("Volumes"))) %>%
+  mutate(concentration = str_extract(`Sample Name`, "(?<=_)\\d+\\.?\\d*(?=mg/mL)") %>% as.factor()) %>%
+  drop_na(`concentration`) %>%
+  mutate(elapsed_time = `measurement_time_numeric` - `measurement_time_numeric`[1])
+
 ```
 
 ## Question 4 (2 points)
 
 List a question you would like to answer using this dataset:
 
-
+How does the average hydrodynamic particle diameter change as a function of incubation time and as a function of protein concentration?
 
 ## Question 5 (5 points)
 
@@ -66,6 +110,15 @@ NOTE: you do not have to use a formal stats test if you are not familiar! Feel f
 
 ```{r Q5}
 
+sizes_and_intensities_cleaned %>%
+  #filter(`Sample Name` == "SeNP_only_15min 1") %>%
+  ggplot(aes(x=log(size_nm), y=intensity_percent)) +
+  geom_point() +
+  facet_wrap(~ `Sample Name`)
+
+dls_protein_corona_size_concentration %>%
+  ggplot(aes(x=elapsed_time, y=`Z-Average (d.nm)`, color=concentration)) +
+  geom_point()
 ```
 
 Provide the answer (in words) to your question below:
