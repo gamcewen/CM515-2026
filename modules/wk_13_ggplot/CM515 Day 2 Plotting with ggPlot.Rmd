@@ -9,6 +9,8 @@ library(tidyverse)
 library(knitr)
 library(ggplot2)
 library(ggthemes)
+library(ggpubr)
+library(ggridges)
 
 
 ```
@@ -65,8 +67,12 @@ dU_GC%>%
   ggplot() +
   geom_point(aes(x=Hours, y=Blank.1, color="red")) +
   geom_point(aes(x=Hours, y=Blank.2, color="blue")) +
-geom_point(aes(x=Hours, y=Blank.3, color="green")) +
-geom_point(aes(x=Hours, y=Blank.4, color="purple")) 
+  geom_point(aes(x=Hours, y=Blank.3, color="green")) +
+  geom_point(aes(x=Hours, y=Blank.4, color="purple")) +
+  geom_line(aes(x=Hours, y=Blank.1, color="red")) +
+  geom_line(aes(x=Hours, y=Blank.2, color="blue")) +
+  geom_line(aes(x=Hours, y=Blank.3, color="green")) +
+  geom_line(aes(x=Hours, y=Blank.4, color="purple")) 
 
 
 ```
@@ -201,22 +207,9 @@ dU_Table_Final %>%
   geom_line()
 ```
 
-Looks great right? But if you remove the color factor, what does the raw mapping actually look like?
-
-```{r, echo=T, message=F, warning=F}
-dU_Table_Final %>%
-  ggplot(aes(x=Hours, y=mean)) +
-  geom_line()
-
-```
-
-While this is a great way to learn data manipulation skills in R, this is very unnecessary.
-
 Not only is that an insane amount of work (took me several days to figure out) and a lot of lines of code, the graph is factually incorrect.
 
-Without factoring the data to a strain, the mapping is completely off.
-
-Even when we factor the data, if we go back to the raw data, the lines for each strain are not right.
+The lines of each strain are not exactly correct.
 
 Because TK0887 is a repeating column, the 'startswith' argument cannot differentiate between each column that has the name TK0887.
 
@@ -227,6 +220,8 @@ Let's make the data tidy, and then start over.
 # 3. Working with tidy data. Mapping Aesthetics
 
 We can complete the same statistical anlysis in a SIGNIFICANTLY shorter time span.
+
+Try plotting mean (optical density) against time now, and factor the color by strain.
 
 ```{r, echo=T, message=F, warning=F}
 ####
@@ -242,32 +237,14 @@ dU_GC_tidy_Stat <- dU_GC_tidy %>%
   summarize(mean = mean(OD), sd = sd(OD), n=n(), se = sd/sqrt(n)) %>%
   group_by(Strain)
 
-dU_GC_tidy_Stat%>%
-  ggplot(aes(x=Hours, y=mean)) +
-  geom_point()
+dU_GC_tidy_Stat %>%
+  ggplot(aes(x = Hours, y = mean, color=Strain)) +
+  geom_line()
   
 
 ```
 
 # 4. Factoring the Mapping
-
-Now the mapping looks great! We have given R readable data that it can properly interpret into a graph.
-
-However, we have no idea which set of points are related to which strain, so lets add to our mapping some kind of factor to differenciate the Strains.
-
-```{r, echo=T, message=F, warning=F}
-####
-#04#
-####
-
-dU_GC_tidy_Stat%>%
-  ggplot(aes(x=Hours, y=mean, color=Strain)) +
-  geom_point()
-  
-
-```
-
-# 5. Factoring the Mapping
 
 Our legend labels do not say in any way that these are gene deletions. I did not include deltas because R would not interpret this from a csv file.
 
@@ -285,7 +262,7 @@ You can find all greek letters on wikipedia using the link above under Greek and
 
 ```{r, echo=T, message=F, warning=F}
 ####
-#05#
+#04#
 ####
 
 
@@ -301,12 +278,12 @@ dU_GC_tidy_Stat <- dU_GC_tidy_Stat %>%
 
 dU_GC_tidy_Stat%>%
   ggplot(aes(x=Hours, y=mean, color=Strain)) +
-  geom_point()
+  geom_line()
   
 
 ```
 
-# 6. Picking the right geometry
+# 5. Picking the right geometry
 
 Now the data has received proper statistics and been mapped.
 
@@ -319,12 +296,10 @@ Lets look at a few different geometries.
 #06#
 ####
 
-install.packages("ggridges")
-library(ggridges)
-
 dU_GC_tidy_Stat%>%
-  ggplot(aes(x=Hours, y= Strain)) +
+  ggplot(aes(x=Hours, y= Strain ,color = Strain)) +
   geom_density_ridges_gradient()
+
 ```
 
 The {ggridges} package draws density curves which are by definition scaled to an area of 1.The height of the ridges therefore cannot be mapped to the mean OD so we must use a different graph.
@@ -340,7 +315,7 @@ dU_GC_tidy_Stat%>%
   geom_errorbar(width=0.1) 
 ```
 
-Makes a step-wise line go through each point, but in this context it is quite ugly.
+Makes a step-wise line go through each point, but in this context it is quite ugly. Geom_col is...just...no...
 
 ```{r, echo=T, message=F, warning=F}
 dU_GC_tidy_Stat%>%
@@ -361,7 +336,7 @@ dU_GC_tidy_Stat%>%
 
 ```
 
-# 6b. Overlapping Geometries
+# 5b. Overlapping Geometries
 
 While the line follows the trend, it is not a bad idea to include the points where the data are.
 
@@ -371,7 +346,7 @@ Hypothetically, we could use geom_smooth for this, and just remove the standard 
 
 ```{r, echo=T, message=F, warning=F}
 ####
-#06b#
+#05b#
 ####
 
 dU_GC_tidy_Stat%>%
@@ -389,11 +364,11 @@ dU_GC_tidy_Stat%>%
 
 ```
 
-# 7. Labels
+# 6. Labels
 
 Now this graph is starting to display our data appropriately.
 
-Let's add changing the axis labels
+Let's change the axis labels
 
 We want to specify that the y axis is optical density at 600nm.
 
@@ -405,29 +380,125 @@ For more on bquote-use help("plotmath") or ask ChatGPT.
 
 ```{r, echo=T, message=F, warning=F}
 ####
-#07#
+#06#
 ####
 
-help("plotmath")
+#help("plotmath")
 
 dU_GC_tidy_Stat%>%
   ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
   geom_line(size=0.5) +
   geom_point(size=1.2) +
   geom_errorbar(width=0.1) +
-  labs(title = "Only deletion of all dU repair components impacts growth", subtitle="85\u00B0C",
+  labs(title = "Strains lacking all dU repair components have the most severe fitness defect", subtitle="85 Degrees Celsius",
+       y = "OD600 nm",
+       x = "Time (hrs)") +
+    theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust = 0.5)) 
+
+dU_GC_tidy_Stat%>%
+  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
+  geom_line(size=0.5) +
+  geom_point(size=1.2) +
+  geom_errorbar(width=0.1) +
+  labs(title = "Strains lacking all dU repair components have the most severe fitness defect", subtitle="85\u00B0C",
        y = bquote(bold("OD")[600][nm]),
-       x = bquote(bold('Time (Hours)'))) +
+       x = bquote(bold('Time (hrs)'))) +
     theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust = 0.5)) 
   
 
 ```
 
-# 8. Scales
+# 7. Scales
 
 The scales are currently not very informative.
 
-Instead of every 10 hours, lets look at every 4 hours.
+Lets rescale the x axis tick marks to be more helpful. Try to get it to have a tick mark every 4 hours.
+Try also rescaling the y axis so we have context for where the maximum OD is, try showing OD every 0.3.
+
+
+```{r, echo=T, message=F, warning=F}
+####
+#07#
+####
+
+dU_GC_tidy_Stat%>%
+  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
+  geom_line(size=0.5) +
+  geom_point(size=1.2) +
+  geom_errorbar(width=0.1) +
+  labs(title = "Strains lacking all dU repair components have the most severe fitness defect", subtitle="85\u00B0C",
+       y = bquote(bold("OD")[600][nm]),
+       x = bquote(bold('Time (hrs)'))) +
+    theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26)) +
+  scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.2))
+                       
+                                                                
+
+```
+
+# 7b. Fitting the Data
+
+The scales are better...but the data does not start at 0,0. It also goes out past 26 to empty space.
+
+We can add an expand argument to our continuous scales to set the data at the origin.
+
+```{r, echo=T, message=F, warning=F}
+####
+#07b#
+####
+
+dU_GC_tidy_Stat%>%
+  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
+  geom_line(size=0.5) +
+  geom_point(size=1.2) +
+  geom_errorbar(width=0.1) +
+  labs(title = bquote(bold("Strains lacking all dU repair components have the most severe fitness defect")), subtitle="85\u00B0C",
+       y = bquote(bold("OD")[600][nm]),
+       x = bquote(bold('Time (hrs)'))) +
+    theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26), expand = c(0,0)) +
+  scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.2), expand = c(0,0)) 
+                       
+                                                                
+  
+```
+
+# 7c. Transforming to log scale
+
+That looks good!
+
+We can also transform the data to be more logarithmic. 
+
+NOTE: While log scale is accepted for this data in my field, you should scale your data based on what is appropriate. Notice how all the differences in my graphs are hidden now.
+
+
+```{r, echo=T, message=F, warning=F}
+####
+#07c#
+####
+
+dU_GC_tidy_Stat%>%
+  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
+  geom_line(size=0.5) +
+  geom_point(size=1.2) +
+  geom_errorbar(width=0.1) +
+  labs(title = bquote(bold("Strains lacking all dU repair components have the most severe fitness defect")), subtitle="85\u00B0C",
+       y = bquote(bold("OD")[600][nm]),
+       x = bquote(bold('Time (hrs)'))) +
+    theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26), expand = c(0,0)) +
+  scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.2), expand = c(0,0), trans = "log10")
+                       
+                                                                
+  
+```
+
+# 8. Scales-Colors
+
+Right now the legend is pretty out of order and the rainbow of colors is hard to follow.
+
+Let's make a color palette we can work with!
 
 ```{r, echo=T, message=F, warning=F}
 ####
@@ -439,24 +510,34 @@ dU_GC_tidy_Stat%>%
   geom_line(size=0.5) +
   geom_point(size=1.2) +
   geom_errorbar(width=0.1) +
-  labs(title = "Only deletion of all dU repair components impacts growth", subtitle="85\u00B0C",
+  labs(title = bquote(bold("Strains lacking all dU repair components have the most severe fitness defect")), subtitle="85\u00B0C",
        y = bquote(bold("OD")[600][nm]),
        x = bquote(bold('Time (Hours)'))) +
     theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust = 0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26)) +
-  scale_y_continuous(breaks=c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1), limits=c(-0.05, 1.125))
-                       
-                                                                
+  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26), expand = c(0,0)) +
+  scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.2), expand = c(0,0)) 
+  scale_color_manual(values=c("pink", "brown4", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black" ), name = "Strain") 
+
+dU_GC_tidy_Stat%>%
+  ggplot() +
+  geom_line(aes(x=Hours, y=mean, color=Strain), size=0.5) +
+  geom_point(aes(x=Hours, y=mean, color=Strain), size=1.2) +
+  geom_errorbar(width=0.1, aes(x=Hours, ymax = mean+sd, ymin = mean-sd, color=Strain)) +
+  labs(title = bquote(bold("Strains lacking all dU repair components have the most severe fitness defect")), subtitle="85\u00B0C",
+       y = bquote(bold("OD")[600][nm]),
+       x = bquote(bold('Time (hrs)'))) +
+    theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26), expand = c(0,0)) +
+  scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.2), expand = c(0,0)) 
+  scale_color_brewer(palette="Set3")
 
 ```
 
-# 8b. Fitting the Data
+# 8b. Set your colors to your legend
 
-The scales are better...but the data does not start at 0,0. It also goes out past 26 to empty space.
+Now we have our own colors, but the legend is not in any logical order!
 
-We can mess around with the limits, or we can use coordinates.
-
-We can also add an expand argument to our continuous scales to set the data at the origin.
+As with scale_x_continuous, we can also add breaks to scale_color_manual to reorder our legend names to our colors.
 
 ```{r, echo=T, message=F, warning=F}
 ####
@@ -468,126 +549,109 @@ dU_GC_tidy_Stat%>%
   geom_line(size=0.5) +
   geom_point(size=1.2) +
   geom_errorbar(width=0.1) +
-  labs(title = bquote(bold("Only deletion of all dU repair components impacts growth")), subtitle="85\u00B0C",
+  labs(title = bquote(bold("Strains lacking all dU repair components have the most severe fitness defect")), subtitle="85\u00B0C",
        y = bquote(bold("OD")[600][nm]),
-       x = bquote(bold('Time (Hours)'))) +
+       x = bquote(bold('Time (hrs)'))) +
     theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust = 0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), expand=c(0,0)) +
-  scale_y_continuous(breaks=c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1), expand=c(0,0)) +
-  coord_cartesian(xlim=c(0,26.25), ylim=c(-0.05, 1.125))
-                       
-                                                                
-  
-```
-
-# 8c. Transforming to log scale
-
-That looks good!
-
-We can also transform the data to be more logarithmic. 
-
-NOTE: While log scale is accepted for this data in my field, you should scale your data based on what is appropriate. Notice how all the differences in my graphs are hidden now.
-
-
-```{r, echo=T, message=F, warning=F}
-####
-#08c#
-####
-
-dU_GC_tidy_Stat%>%
-  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
-  geom_line(size=0.5) +
-  geom_point(size=1.2) +
-  geom_errorbar(width=0.1) +
-  labs(title = bquote(bold("Only deletion of all dU repair components impacts growth")), subtitle="85\u00B0C",
-       y = bquote(bold("OD")[600][nm]),
-       x = bquote(bold('Time (Hours)'))) +
-    theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust = 0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), expand=c(0,0)) +
-  scale_y_continuous(breaks=c(0.01, 0.1, 1.0), expand=c(0,0), trans='log10') +
-  coord_cartesian(xlim=c(0,26.25), ylim=c(0.01, 1.2))
-                       
-                                                                
-  
-```
-
-# 9. Scales-Colors
-
-Right now the legend is pretty out of order and the rainbow of colors is hard to follow.
-
-Let's make a color palette we can work with!
-
-```{r, echo=T, message=F, warning=F}
-####
-#09#
-####
-
-dU_GC_tidy_Stat%>%
-  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
-  geom_line(size=0.5) +
-  geom_point(size=1.2) +
-  geom_errorbar(width=0.1) +
-  labs(title = bquote(bold("Only deletion of all dU repair components impacts growth")), subtitle="85\u00B0C",
-       y = bquote(bold("OD")[600][nm]),
-       x = bquote(bold('Time (Hours)'))) +
-    theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust = 0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), expand=c(0,0)) +
-  scale_y_continuous(breaks=c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1), expand=c(0,0)) +
-  coord_cartesian(xlim=c(0,26.25), ylim=c(-0.05, 1.15)) + 
-  scale_color_manual(values=c("pink", "brown4", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black" ), name = "Strain") 
-
-dU_GC_tidy_Stat%>%
-  ggplot() +
-  geom_line(aes(x=Hours, y=mean, color=Strain), size=0.5) +
-  geom_point(aes(x=Hours, y=mean, color=Strain), size=1.2) +
-  geom_errorbar(width=0.1, aes(x=Hours, ymax = mean+sd, ymin = mean-sd, color=Strain)) +
-  labs(title = bquote(bold("Only deletion of all dU repair components impacts growth")), subtitle="85\u00B0C",
-       y = bquote(bold("OD")[600][nm]),
-       x = bquote(bold('Time (Hours)'))) +
-    theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust = 0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), expand=c(0,0)) +
-  scale_y_continuous(breaks=c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1), expand=c(0,0)) +
-  coord_cartesian(xlim=c(0,26.25), ylim=c(-0.05, 1.15)) + 
-  scale_color_brewer(palette="Set3")
-
-```
-
-# 9b. Set your colors to your legend
-
-Now we have our own colors, but the legend is not in any logical order!
-
-As with scale_x_continuous, we can also add breaks to scale_color_manual to reorder our legend names to our colors.
-
-```{r, echo=T, message=F, warning=F}
-####
-#09b#
-####
-
-dU_GC_tidy_Stat%>%
-  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
-  geom_line(size=0.5) +
-  geom_point(size=1.2) +
-  geom_errorbar(width=0.1) +
-  labs(title = bquote(bold("Only deletion of all dU repair components impacts.")), subtitle="85\u00B0C",
-       y = bquote(bold("OD")[600][nm]),
-       x = bquote(bold('Time (Hours)'))) +
-    theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust = 0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), expand=c(0,0)) +
-  scale_y_continuous(breaks=c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1), expand=c(0,0)) +
-  coord_cartesian(xlim=c(0,26.25), ylim=c(-0.05, 1.15)) + 
+  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26), expand = c(0,0)) +
+  scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.2), expand = c(0,0)) +
   scale_color_manual(values=c("pink", "brown4", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black" ), name = "Strain", breaks=c("Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143")) +
-  geom_errorbar(width=0.1, aes(x=Hours, ymax = mean+sd, ymin = mean-sd, color=Strain)) +
-  labs(title = bquote(bold("Only deletion of all dU repair components impacts growth")), subtitle="85\u00B0C", y = bquote(bold("OD")[600][nm]))
+  geom_errorbar(width=0.1, aes(x=Hours, ymax = mean+sd, ymin = mean-sd, color=Strain)) 
  
 ```
 
-# 10. Theme
+# 9. Theme
 
 Now we are done graphing, choose your favorite theme.
 
 I prefer minimalism in my axis.
 
 If you put a theme, you will want to put it early in your ggplot code. Otherwise the theme is building off of every previous component and this can cause errors.
+
+```{r, echo=T, message=F, warning=F}
+####
+#9#
+####
+
+dU_GC_tidy_Stat%>%
+  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
+  geom_line(size=0.5) +
+  geom_point(size=1.2) +
+  geom_errorbar(width=0.1) +
+  labs(title = bquote(bold("Strains lacking all dU repair components have the most severe fitness defect")), subtitle="85\u00B0C",
+       y = bquote(bold("OD")[600][nm]),
+       x = bquote(bold('Time (hrs)'))) +
+    theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26), expand = c(0,0)) +
+  scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.2), expand = c(0,0)) +
+  scale_color_manual(values=c("pink", "brown4", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black" ), name = "Strain", breaks=c("Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143")) +
+  geom_errorbar(width=0.1, aes(x=Hours, ymax = mean+sd, ymin = mean-sd, color=Strain)) +
+  theme_classic()
+  
+
+
+
+```
+
+# 9b. Adjusting Themes
+
+But what if I wanted a different theme and wanted no axis?
+
+Watch out-different themes will resize your axis, title, and legend, so you will have to fix this in post.
+
+```{r, echo=T, message=F, warning=F}
+####
+#9b#
+####
+
+
+#using a theme
+
+dU_GC_tidy_Stat%>%
+  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
+  geom_line(size=0.5) +
+  geom_point(size=1.2) +
+  geom_errorbar(width=0.1) +
+  labs(title = bquote(bold("Strains lacking all dU repair components have the most severe fitness defect")), subtitle="85\u00B0C",
+       y = bquote(bold("OD")[600][nm]),
+       x = bquote(bold('Time (hrs)'))) +
+  theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust =   0.5)) +
+  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26), expand = c(0,0)) +
+  scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.2), expand = c(0,0)) +
+  scale_color_manual(values=c("pink", "brown", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black" ), name = "Strain", breaks=c("Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme_classic()
+  
+
+#using and adjusting the theme
+
+dU_GC_tidy_Stat%>%
+  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
+  geom_line(size=0.5) +
+  geom_point(size=1.2) +
+  geom_errorbar(width=0.1) +
+  labs(title = bquote(bold("Strains lacking all dU repair components have the most severe fitness defect")), subtitle=bquote(bold("85\u00B0C")),
+       y = bquote(bold("OD")[600][nm]),
+       x = bquote(bold('Time (hrs)'))) +
+  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26), expand = c(0,0)) +
+  scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.2), expand = c(0,0)) +
+  scale_color_manual(values=c("pink", "brown", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black" ), name = "Strain", breaks=c("Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
+    theme_classic() +
+    theme(plot.title = element_text(hjust = 0.5, size = 12), plot.subtitle= element_text(hjust =   0.5, size = 10)) +
+    theme(axis.text.x = element_text(face = 'bold', size = 8, color = "black")) +
+    theme(axis.text.y = element_text(face = 'bold', size = 8, color = 'black')) +
+    theme(axis.title.x = element_text(face = 'bold', size = 12)) +
+    theme(axis.title.y = element_text(face = 'bold', size = 12)) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(legend.text = element_text(face = 'bold', size = 8)) +
+    theme(legend.title = element_text( face = 'bold', size = 10)) 
+```
+
+# 10. ggSave
+
+It looks like we are ready to save the graph!
+
+Let's use ggsave.
 
 ```{r, echo=T, message=F, warning=F}
 ####
@@ -599,103 +663,27 @@ dU_GC_tidy_Stat%>%
   geom_line(size=0.5) +
   geom_point(size=1.2) +
   geom_errorbar(width=0.1) +
-  labs(title = bquote(bold("Only deletion of all dU repair components impacts growth")), subtitle="85\u00B0C",
+  labs(title = bquote(bold("Strains lacking all dU repair components have the most severe fitness defect")), subtitle=bquote(bold("85\u00B0C")),
        y = bquote(bold("OD")[600][nm]),
-       x = bquote(bold('Time (Hours)'))) +
-  theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust =   0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), expand=c(0,0)) +
-  scale_y_continuous(breaks=c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1), expand=c(0,0)) +
-  coord_cartesian(xlim=c(0,26.25), ylim=c(-0.05, 1.15)) + 
-  scale_color_manual(values=c("pink", "brown", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black" ), name = "Strain", breaks=c("Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))
-  
-
-
-
-```
-
-# 10b. Adjusting Themes
-
-But what if I wanted a different theme and wanted no axis?
-
-Watch out-different themes will resize your axis, title, and legend, so you will have to fix this in post.
-
-```{r, echo=T, message=F, warning=F}
-####
-#10b#
-####
-
-
-#using a theme
-
-dU_GC_tidy_Stat%>%
-  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
-  geom_line(size=0.5) +
-  geom_point(size=1.2) +
-  geom_errorbar(width=0.1) +
-  labs(title = bquote(bold("Only deletion of all dU repair components impacts growth")), subtitle="85\u00B0C",
-       y = bquote(bold("OD")[600][nm]),
-       x = bquote(bold('Time (Hours)'))) +
-  theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust =   0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), expand=c(0,0)) +
-  scale_y_continuous(breaks=c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1), expand=c(0,0)) +
-  coord_cartesian(xlim=c(0,26.25), ylim=c(-0.05, 1.15)) + 
+       x = bquote(bold('Time (hrs)'))) +
+  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26), expand = c(0,0)) +
+  scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.2), expand = c(0,0)) +
   scale_color_manual(values=c("pink", "brown", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black" ), name = "Strain", breaks=c("Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  theme_bw()
-  
+    theme_classic() +
+    theme(plot.title = element_text(hjust = 0.5, size = 12), plot.subtitle= element_text(hjust =   0.5, size = 10)) +
+    theme(axis.text.x = element_text(face = 'bold', size = 8, color = "black")) +
+    theme(axis.text.y = element_text(face = 'bold', size = 8, color = 'black')) +
+    theme(axis.title.x = element_text(face = 'bold', size = 12)) +
+    theme(axis.title.y = element_text(face = 'bold', size = 12)) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(legend.text = element_text(face = 'bold', size = 8)) +
+    theme(legend.title = element_text( face = 'bold', size = 10)) 
 
-#using and adjusting the theme
-
-dU_GC_tidy_Stat%>%
-  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
-  geom_line(size=0.5) +
-  geom_point(size=1.2) +
-  geom_errorbar(width=0.1) +
-  labs(title = bquote(bold("Only deletion of all dU repair components impacts growth")), subtitle=bquote(bold("85\u00B0C")),
-       y = bquote(bold("OD")[600][nm]),
-       x = bquote(bold('Time (Hours)'))) +
-  theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust =   0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), expand=c(0,0)) +
-  scale_y_continuous(breaks=c(0, 0.2, 0.4, 0.6, 0.8, 1.0), expand=c(0,0)) +
-  coord_cartesian(xlim=c(0,26.25), ylim=c(-0.1, 1.15)) + 
-  scale_color_manual(values=c("pink", "brown", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black" ), name = "Strain", breaks=c("Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-theme(legend.text = element_text(family = '', face = 'bold', size = 6)) 
-```
-
-# 11. ggSave
-
-It looks like we are ready to save the graph!
-
-Let's use ggsave.
-
-```{r, echo=T, message=F, warning=F}
-####
-#11#
-####
-
-dU_GC_tidy_Stat%>%
-  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
-  geom_line(size=0.5) +
-  geom_point(size=1.2) +
-  geom_errorbar(width=0.1) +
-  labs(title = bquote(bold("Only deletion of all dU repair components impacts growth")), subtitle=bquote(bold("85\u00B0C")),
-       y = bquote(bold("OD")[600][nm]),
-       x = bquote(bold('Time (Hours)'))) +
-  theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust =   0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), expand=c(0,0)) +
-  scale_y_continuous(breaks=c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1), expand=c(0,0)) +
-  coord_cartesian(xlim=c(0,26.25), ylim=c(-0.1, 1.2)) + 
-  scale_color_manual(values=c("pink", "brown4", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black" ), name = "Strain", breaks=c("Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-theme(legend.text = element_text(face = 'bold', size = 6))
-
-ggsave("dU Growth Curve.jpg")
+ggsave("dU Growth Curve.jpg", dpi=2000, width = 8.25, height = 4, unit = 'in')
  
 ```
 
-# 12. Facet Wrapping
+# 11. Facet Wrapping
 
 BUT WAIT! THERE IS MORE!
 
@@ -707,69 +695,58 @@ We can separate the graphs into smaller individual graphs for each strain.
 ####
 #11#
 ####
+dU_GC_tidy<-read.csv("Growth_Curve_dU_tidy.csv",fill=TRUE,header=TRUE)
 
-dU_GC_tidy_Stat_Clean <- dU_GC_tidy_Stat[-(which(dU_GC_tidy_Stat$Strain %in% "Blank" )),]
+dU_Neg_85 <- dU_GC_tidy %>%
+  filter(Strain == "Blank") %>%
+  group_by(Hours)%>%
+  summarize(blank_mean = mean(OD), .groups = "drop")
 
+dU_GC_tidy_Stat<- dU_GC_tidy %>%
+  left_join(dU_Neg_85, by = "Hours") %>%
+  mutate(OD = OD - blank_mean) %>%
+  group_by(Hours, Strain) %>%
+  summarize(mean = mean(OD), sd = sd(OD), n = n(), se = sd / sqrt(n), .groups = "drop") %>%
+  filter(Strain != "Blank") %>%
+  mutate(Strain = 
+           recode(Strain, "TK0887-Endonuclease Q" = "\u0394TK0887-Endonuclease Q", 
+                  "TK1898-Endonuclease MS" = "\u0394TK1898-Endonuclease MS", 
+                  "TK2143-Uracil DNA Glycosylase" = "\u0394TK2143-Uracil DNA Glycosylase",
+                  "TK0887/TK1898" = "\u0394TK0887/\u0394TK1898", 
+                  "TK0887/TK2143" = "\u0394TK0887/\u0394TK2143", 
+                  "TK1898/TK2143" = "\u0394TK1898/\u0394TK2143", 
+                  "TK0887/TK1898/TK2143" = "\u0394TK0887/\u0394TK1898/\u0394TK2143"))
                                                  
-dU_GC_tidy_Stat_Clean%>%
+dU_GC_tidy_Stat%>%
   ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
   geom_line(size=0.5) +
   geom_point(size=1.2) +
   geom_errorbar(width=0.1) +
   theme_bw() +
-  labs(title = bquote(bold("Only deletion of all dU repair components impacts growth")), subtitle=bquote(bold("85\u00B0C")),
+  labs(title = bquote(bold("Strains lacking all dU repair components have the most severe fitness defect")), subtitle=bquote(bold("85\u00B0C")),
        y = bquote(bold("OD")[600][nm]),
        x = bquote(bold('Time (Hours)'))) +
-  theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust =   0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), expand=c(0,0)) +
-  scale_y_continuous(breaks=c(0.01, 0.1, 1.0), expand=c(0,0), trans='log10') +
-  coord_cartesian(xlim=c(0,26.5), ylim=c(0.01, 1.6)) + 
-  scale_color_manual(values=c("pink", "darkgrey", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black"), name = "Strain", breaks=c("Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26), expand = c(0,0)) +
+  scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.2), expand = c(0,0)) +
+  scale_color_manual(values=c( "darkgrey", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black"), name = "Strain", breaks=c("TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
   facet_wrap(~Strain) +
-  facet_wrap(~factor(Strain, levels=c( "Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))) +
-  theme(strip.text = element_text(face = "bold", size=8))+
-theme(legend.position = "none") +
-  theme(plot.title = element_text(family = '', face = 'bold', size = 12),
-        axis.title = element_text(family = '', face = 'bold', size = 11),
-        axis.text = element_text(family = "", size = 6, face = 'bold', color = "black"),
-        legend.title = element_blank(),
-        legend.text = element_text(family = '', face = 'bold', size = 11)) 
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(plot.title = element_text(hjust = 0.5, size = 12), plot.subtitle= element_text(hjust =   0.5, size = 10)) +
+    theme(axis.text.x = element_text(face = 'bold', size = 8, color = "black")) +
+    theme(axis.text.y = element_text(face = 'bold', size = 8, color = 'black')) +
+    theme(axis.title.x = element_text(face = 'bold', size = 12)) +
+    theme(axis.title.y = element_text(face = 'bold', size = 12)) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(legend.text = element_text(face = 'bold', size = 8)) +
+    theme(legend.title = element_text( face = 'bold', size = 10)) 
 
-ggsave("dU_Plot_85_Log.jpg", dpi=2000, height=5)
+ggsave("dU_Plot_85_Facet_Wrapped.jpg", dpi=2000)
 
-dU_GC_tidy_Stat_Clean_95 <- dU_GC_tidy_Stat_95[-(which(dU_GC_tidy_Stat_95$Strain %in% "Blank" )),]
-
-dU_GC_tidy_Stat_Clean_95%>%
-  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
-  geom_line(size=0.5) +
-  geom_point(size=1.2) +
-  geom_errorbar(width=0.1) +
-  theme_bw() +
-  labs(title = bquote(bold("Only deletion of all dU repair components impacts growth")), subtitle=bquote(bold("95\u00B0C")),
-       y = bquote(bold("OD")[600][nm]),
-       x = bquote(bold('Time (Hours)'))) +
-  theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust =   0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), expand=c(0,0)) +
-  scale_y_continuous(breaks=c(0.01, 0.1, 1.0), expand=c(0,0), trans='log10') +
-  coord_cartesian(xlim=c(0,26.5), ylim=c(0.01, 1.6)) + 
-  scale_color_manual(values=c("pink", "darkgrey", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black"), name = "Strain", breaks=c("Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  facet_wrap(~Strain) +
-  facet_wrap(~factor(Strain, levels=c( "Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))) +
-  theme(strip.text = element_text(face = "bold", size=8))+
-theme(legend.position = "none") +
-  theme(plot.title = element_text(family = '', face = 'bold', size = 12),
-        axis.title = element_text(family = '', face = 'bold', size = 11),
-        axis.text = element_text(family = "", size = 6, face = 'bold', color = "black"),
-        legend.title = element_blank(),
-        legend.text = element_text(family = '', face = 'bold', size = 11)) 
-
-ggsave("dU_Plot_95_Log.jpg", dpi=2000, height=5)
+#facet_wrap(~factor(Strain, levels=c( "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))) +
 
 ```
 
-# 12b. Facet-Wrap - Removing Legends
+# 11b. Facet-Wrap - Removing Legends
 
 It is a bit redundant to have the panel labels and the strain labels.
 
@@ -777,7 +754,7 @@ We can remove one or the other.
 
 ```{r, echo=T, message=F, warning=F}
 ####
-#12b#
+#11b#
 ####
 
 
@@ -789,21 +766,27 @@ dU_GC_tidy_Stat%>%
   geom_line(size=0.5) +
   geom_point(size=1.2) +
   geom_errorbar(width=0.1) +
-  labs(title = bquote(bold("Only deletion of all dU repair components impacts growth")), subtitle=bquote(bold("85\u00B0C")),
+  theme_bw() +
+  labs(title = bquote(bold("Strains lacking all dU repair components have the most severe fitness defect")), subtitle=bquote(bold("85\u00B0C")),
        y = bquote(bold("OD")[600][nm]),
        x = bquote(bold('Time (Hours)'))) +
-  theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust =   0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), expand=c(0,0)) +
-  scale_y_continuous(breaks=c(0, 0.2, 0.4, 0.6, 0.8, 1.0), expand=c(0,0)) +
-  coord_cartesian(xlim=c(0,26.5), ylim=c(-0.1, 1.15)) + 
-  scale_color_manual(values=c("pink", "brown", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black" ), name = "Strain", breaks=c("Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  facet_wrap(~Strain) +
-  facet_wrap(~factor(Strain, levels=c( "Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))) +
+  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26), expand = c(0,0)) +
+  scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.2), expand = c(0,0)) +
+  scale_color_manual(values=c( "darkgrey", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black"), name = "Strain", breaks=c("TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
+  facet_wrap(~factor(Strain, levels=c( "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(plot.title = element_text(hjust = 0.5, size = 12), plot.subtitle= element_text(hjust =   0.5, size = 10)) +
+    theme(axis.text.x = element_text(face = 'bold', size = 8, color = "black")) +
+    theme(axis.text.y = element_text(face = 'bold', size = 8, color = 'black')) +
+    theme(axis.title.x = element_text(face = 'bold', size = 12)) +
+    theme(axis.title.y = element_text(face = 'bold', size = 12)) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(legend.text = element_text(face = 'bold', size = 8)) +
+    theme(legend.title = element_text( face = 'bold', size = 10)) +
     theme(strip.text = element_text(face = "bold", size=6))+
-theme(legend.position = "none") 
+    theme(legend.position = "none") 
 
-ggsave("dU Growth Curve_Facet_Wrapped.jpg")
+ggsave("dU Growth Curve_Facet_Wrapped.jpg", dpi = 2000)
 
 
 #without the panel labels
@@ -814,25 +797,30 @@ dU_GC_tidy_Stat%>%
   geom_line(size=0.5) +
   geom_point(size=1.2) +
   geom_errorbar(width=0.1) +
-  labs(title = bquote(bold("Only deletion of all dU repair components impacts growth")), subtitle=bquote(bold("85\u00B0C")),
+  theme_bw() +
+  labs(title = bquote(bold("Strains lacking all dU repair components have the most severe fitness defect")), subtitle=bquote(bold("85\u00B0C")),
        y = bquote(bold("OD")[600][nm]),
        x = bquote(bold('Time (Hours)'))) +
-  theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust =   0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), expand=c(0,0)) +
-  scale_y_continuous(breaks=c(0, 0.2, 0.4, 0.6, 0.8, 1.0), expand=c(0,0)) +
-  coord_cartesian(xlim=c(0,26.5), ylim=c(-0.1, 1.15)) + 
-  scale_color_manual(values=c("pink", "brown", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black" ), name = "Strain", breaks=c("Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  facet_wrap(~Strain) +
-  facet_wrap(~factor(Strain, levels=c( "Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))) +
-    theme(strip.text = element_text(face = "bold", size=6))+
+  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26), expand = c(0,0)) +
+  scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.2), expand = c(0,0)) +
+  scale_color_manual(values=c( "darkgrey", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black"), name = "Strain", breaks=c("TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
+  facet_wrap(~factor(Strain, levels=c( "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(plot.title = element_text(hjust = 0.5, size = 12), plot.subtitle= element_text(hjust =   0.5, size = 10)) +
+    theme(axis.text.x = element_text(face = 'bold', size = 8, color = "black")) +
+    theme(axis.text.y = element_text(face = 'bold', size = 8, color = 'black')) +
+    theme(axis.title.x = element_text(face = 'bold', size = 12)) +
+    theme(axis.title.y = element_text(face = 'bold', size = 12)) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(legend.text = element_text(face = 'bold', size = 8)) +
+    theme(legend.title = element_text( face = 'bold', size = 10)) +
     theme( strip.text.x = element_blank() )
 
-ggsave("dU Growth Curve_Facet_Wrapped_2.jpg")
+ggsave("dU Growth Curve_Facet_Wrapped_2.jpg", dpi=2000, width = 12)
  
 ```
 
-# 13. Bonus- ggpubr
+# 12. Bonus- ggpubr
 
 There are a TON of packages that can take ggplot to the next level.
 
@@ -842,11 +830,8 @@ If I want, I can use the ggpubr package to get an image with two graphs.
 
 ```{r, echo=T, message=F, warning=F}
 ####
-#13#
+#12#
 ####
-
-#install.packages("ggpubr")
-library(ggpubr)
 
 #make 85 degree data into an item
 
@@ -855,16 +840,25 @@ dU_85 <- dU_GC_tidy_Stat%>%
   geom_line(size=0.5) +
   geom_point(size=1.2) +
   geom_errorbar(width=0.1) +
-  labs( subtitle=bquote(bold("85\u00B0C")),
+  theme_bw() +
+  labs(subtitle=bquote(bold("85\u00B0C")),
        y = bquote(bold("OD")[600][nm]),
        x = bquote(bold('Time (Hours)'))) +
-  theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust =   0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), expand=c(0,0)) +
-  scale_y_continuous(breaks=c(0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2), expand=c(0,0)) +
-  coord_cartesian(xlim=c(0,26.5), ylim=c(-0.07, 1.35)) + 
-  scale_color_manual(values=c("pink", "brown", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black" ), name = "Strain", breaks=c("Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  theme(legend.position="bottom", legend.text = element_text(size=5))
+  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26), expand = c(0,0)) +
+  scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.4), expand = c(0,0)) +
+  scale_color_manual(values=c( "darkgrey", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black"), name = "Strain", breaks=c("TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
+  facet_wrap(ncol=8, ~factor(Strain, levels=c( "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(plot.title = element_text(hjust = 0.5, size = 12), plot.subtitle= element_text(hjust =   0.5, size = 10)) +
+    theme(axis.text.x = element_text(face = 'bold', size = 8, color = "black")) +
+    theme(axis.text.y = element_text(face = 'bold', size = 8, color = 'black')) +
+    theme(axis.title.x = element_text(face = 'bold', size = 12)) +
+    theme(axis.title.y = element_text(face = 'bold', size = 12)) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(legend.text = element_text(face = 'bold', size = 8)) +
+    theme(legend.title = element_text( face = 'bold', size = 10)) +
+    theme(strip.text = element_text(face = "bold", size=4))+
+    theme(legend.position = "none") 
 
 dU_85
 
@@ -873,41 +867,61 @@ dU_85
 
 dU_GC_tidy_95<-read.csv("Growth_Curve_dU_tidy_95.csv",fill=TRUE,header=TRUE)
 
-head(dU_GC_tidy_95)
+dU_Neg_95 <- dU_GC_tidy_95 %>%
+  filter(Strain == "Blank") %>%
+  group_by(Hours)%>%
+  summarize(blank_mean = mean(OD), .groups = "drop")
 
-dU_GC_tidy_Stat_95 <- dU_GC_tidy_95 %>%
+dU_GC_tidy_Stat_95<- dU_GC_tidy_95 %>%
+  left_join(dU_Neg_95, by = "Hours") %>%
+  mutate(OD = OD - blank_mean) %>%
   group_by(Hours, Strain) %>%
-  summarize(mean = mean(OD), sd = sd(OD), n=n(), se= sd/sqrt(n)) %>%
-  group_by(Strain) %>%
-  mutate(Strain = recode(Strain, "TK0887-Endonuclease Q" = "\u0394TK0887-Endonuclease Q", "TK1898-Endonuclease MS" = "\u0394TK1898-Endonuclease MS", "TK2143-Uracil DNA Glycosylase" = "\u0394TK2143-Uracil DNA Glycosylase", "TK0887/TK1898" = "\u0394TK0887/\u0394TK1898", "TK0887/TK2143" = "\u0394TK0887/\u0394TK2143", "TK1898/TK2143" = "\u0394TK1898/\u0394TK2143", "TK0887/TK1898/TK2143" = "\u0394TK0887/\u0394TK1898/\u0394TK2143"))
+  summarize(mean = mean(OD), sd = sd(OD), n = n(), se = sd / sqrt(n), .groups = "drop") %>%
+  filter(Strain != "Blank") %>%
+  mutate(Strain = 
+           recode(Strain, "TK0887-Endonuclease Q" = "\u0394TK0887-Endonuclease Q", 
+                  "TK1898-Endonuclease MS" = "\u0394TK1898-Endonuclease MS", 
+                  "TK2143-Uracil DNA Glycosylase" = "\u0394TK2143-Uracil DNA Glycosylase",
+                  "TK0887/TK1898" = "\u0394TK0887/\u0394TK1898", 
+                  "TK0887/TK2143" = "\u0394TK0887/\u0394TK2143", 
+                  "TK1898/TK2143" = "\u0394TK1898/\u0394TK2143", 
+                  "TK0887/TK1898/TK2143" = "\u0394TK0887/\u0394TK1898/\u0394TK2143"))
 
 dU_95 <- dU_GC_tidy_Stat_95%>%
   ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
   geom_line(size=0.5) +
   geom_point(size=1.2) +
   geom_errorbar(width=0.1) +
+  theme_bw() +
   labs( subtitle=bquote(bold("95\u00B0C")),
        y = bquote(bold("OD")[600][nm]),
        x = bquote(bold('Time (Hours)'))) +
-  theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust =   0.5)) +
-  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), expand=c(0,0)) +
-  scale_y_continuous(breaks=c(0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2), expand=c(0,0)) +
-  coord_cartesian(xlim=c(0,26.5), ylim=c(-0.07, 1.35)) + 
-  scale_color_manual(values=c("pink", "brown", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black" ), name = "Strain", breaks=c("Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  theme(legend.position="bottom", legend.text = element_text(size=5))
-
-
+  scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26), expand = c(0,0)) +
+  scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.4), expand = c(0,0)) +
+  scale_color_manual(values=c( "darkgrey", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black"), name = "Strain", breaks=c("TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))+
+  facet_wrap(ncol=8, ~factor(Strain, levels=c( "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143"))) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(plot.title = element_text(hjust = 0.5, size = 12), plot.subtitle= element_text(hjust =   0.5, size = 10)) +
+    theme(axis.text.x = element_text(face = 'bold', size = 8, color = "black")) +
+    theme(axis.text.y = element_text(face = 'bold', size = 8, color = 'black')) +
+    theme(axis.title.x = element_text(face = 'bold', size = 12)) +
+    theme(axis.title.y = element_text(face = 'bold', size = 12)) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(legend.text = element_text(face = 'bold', size = 8)) +
+    theme(legend.title = element_text( face = 'bold', size = 10)) +
+    theme(strip.text = element_text(face = "bold", size=4))+
+    theme(legend.position = "none") 
+dU_95
 #ggarange
 
-dU_Plot <- ggarrange(dU_85, dU_95, ncol=2, common.legend = TRUE, legend="bottom")
+dU_Plot <- ggarrange(dU_85, dU_95, nrow = 2, legend = "right")
 
-dU_Plot <-annotate_figure(dU_Plot, top = text_grob("Only deletion of all dU repair components impacts growth", 
+dU_Plot <-annotate_figure(dU_Plot, top = text_grob("Strains lacking all dU repair components have the most severe fitness defect", 
                color = "black", face = "bold", size = 14))
 
 dU_Plot
 
-ggsave("dU_GC_Final.jpg", dU_Plot)
+ggsave("dU_GC_Final.jpg", dU_Plot, dpi=2000, width = 10, device = 'jpeg')
 
 
 ```
