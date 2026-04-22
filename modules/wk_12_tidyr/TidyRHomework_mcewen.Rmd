@@ -2,7 +2,9 @@
 title: "TidyR_homework_mcewen"
 author: "Gavin McEwen"
 date: "2026-04-20"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ## TidyR Homework
@@ -20,22 +22,19 @@ readr::read_csv
 Show me the first *10 rows* of your data (1 point).
 
 ```{r Question 1}
-#load a dataset
 
 package_list <- c("dplyr", "readr", "tidyverse", "tidyr", "lubridate", "dedupewider")
 
-for (pckg in package_list) {
+for (pckg in package_list) { #Installs packages in package_list
   if (!requireNamespace(pckg, quietly = TRUE)) {
     install.packages(pckg, dependencies = TRUE)
   }
   library(pckg, character.only = TRUE)
 }
 
-dls_protein_corona_size = read_csv("20250502.csv")
+dls_protein_corona_size = read_csv("20250502.csv") #Reads in a raw csv file
 
-#output the first 10 rows of your data
-
-head(dls_protein_corona_size, 10)
+head(dls_protein_corona_size, 10) #Outputs the first 10 rows of data
 
 ```
 
@@ -43,15 +42,15 @@ head(dls_protein_corona_size, 10)
 
 Identify at least 3 non-tidy characteristics of your data or things you would like to change in this dataset (1 point ea):
 
-* 1. Each set of sample measurement duplicates is preceded by a header row, so that the column headers appear multiple times in each column.
+1. Each set of sample measurement duplicates is preceded by a header row, so that the column headers appear multiple times in each column.
 
-* 2. The size values (in nm) and the intensity values corresponding to those sizes are contained in the same row. They should each be contained in different columns.
+2. The size values (in nm) and the intensity values corresponding to those sizes are contained in the same row. They should each be contained in different columns.
 
-* 3. The NP concentration and replicate number is all contained in the sample name.
+3. The NP concentration and replicate number is all contained in the sample name.
 
-* 4. The "S/W Version" and "Serial Number" are useless information because they are the same for all samples.
+4. The "S/W Version" and "Serial Number" are useless information because they are the same for all samples.
 
-* 5. The measurement date and time contains characters, but I would like to convert it to numeric.
+5. The measurement date and time contains characters, but I would like to convert it to numeric.
 
 Show any code you used to identify these characteristics:
 
@@ -148,7 +147,7 @@ For each concentration tested, the mean particle size (as measured by hydrodynam
 
 Find two functions we haven't introduced you to that are a part of tidyR, dplyr, or other related tidyverse packages. Provide the function name (including the package it's from) and what it does.
 
-* 1. The relocate() function from the dplyr package will change the position of columns without removing them.
+1. The relocate() function from the dplyr package will change the position of columns without removing them.
 
-* 2. The replace_na() function from the tidyR package will replace all NA values with a specific, known value
+2. The replace_na() function from the tidyR package will replace all NA values with a specific, known value
 
