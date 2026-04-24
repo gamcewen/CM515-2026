@@ -76,7 +76,8 @@ Try graphing it.
 #02#
 ####
 
-
+dU_GC %>%
+  ggplot()
 
 ```
 
@@ -242,7 +243,7 @@ head(dU_GC_tidy)
 
 dU_GC_tidy_Stat <- dU_GC_tidy %>%
   group_by(Hours, Strain) %>%
-  summarize(`Optical Density` = mean(OD), sd = sd(OD), n=n(), se = sd/sqrt(n)) %>%
+  summarize(mean_OD = mean(OD), sd = sd(OD), n=n(), se = sd/sqrt(n)) %>%
   group_by(Strain)
 
 
@@ -284,7 +285,12 @@ dU_GC_tidy_Stat <- dU_GC_tidy_Stat %>%
 
 #now let's see how the graph looks with the mutated data
 
-  
+dU_GC_tidy_Stat %>%
+  ggplot(aes(x=Hours, y=mean_OD, color = Strain, ymax = mean_OD + se, ymin = mean_OD - se)) +
+  geom_line(size = 0.5) +
+  geom_point(size = 1.2) +
+  geom_errorbar(width = 0.1) +
+  #labs(title = )
 
 ```
 
@@ -345,7 +351,7 @@ For more on bquote-use help("plotmath") or ask ChatGPT.
 #Try to add your own labels and compare how they look with the bquote adjustments below.
 
 dU_GC_tidy_Stat%>%
-  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
+  ggplot(aes(x=Hours, y=mean_OD, color=Strain, ymax=mean_OD+se, ymin=mean_OD-se)) +
   geom_line(size=0.5) +
   geom_point(size=1.2) +
   geom_errorbar(width=0.1) +
@@ -369,7 +375,17 @@ Try also rescaling the y axis so we have context for where the maximum OD is by 
 #07#
 ####
 
-                                                                
+dU_GC_tidy_Stat%>%
+  ggplot(aes(x=Hours, y=mean_OD, color=Strain, ymax=mean_OD+se, ymin=mean_OD-se)) +
+  geom_line(size=0.5) +
+  geom_point(size=1.2) +
+  geom_errorbar(width=0.1) +
+  labs(title = "Strains lacking all dU repair components have the most severe fitness defect", subtitle="85\u00B0C",
+       y = bquote(bold("OD")[600][nm]),
+       x = bquote(bold('Time (hrs)'))) +
+    theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks = seq(0,24,4), limits = c(0,24), expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0,1.2,0.3), limits = c(-0.05,1.2), expand = c(0,0))
 
 ```
 
@@ -386,7 +402,19 @@ Let's make a color palette we can work with using scale_colors. You decide if yo
 #08#
 ####
 
-
+dU_GC_tidy_Stat%>%
+  ggplot(aes(x=Hours, y=mean_OD, color=Strain, ymax=mean_OD+se, ymin=mean_OD-se)) +
+  geom_line(size=0.5) +
+  geom_point(size=1.2) +
+  geom_errorbar(width=0.1) +
+  labs(title = "Strains lacking all dU repair components have the most severe fitness defect", subtitle="85\u00B0C",
+       y = bquote(bold("OD")[600][nm]),
+       x = bquote(bold('Time (hrs)'))) +
+    theme(plot.title = element_text(hjust = 0.5), plot.subtitle= element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks = seq(0,24,4), limits = c(0,24), expand = c(0,0)) +
+  scale_y_continuous(breaks = seq(0,1.2,0.3), limits = c(-0.05,1.2), expand = c(0,0)) +
+  scale_color_brewer(palette = "Reds") +
+  geom_errorbar(width=0.1, aes(x=Hours, ymax = mean_OD+sd, ymin = mean_OD-sd, color=Strain))
 
 
 ```
@@ -403,10 +431,11 @@ As with scale_x_continuous, we can also add breaks to scale_color_manual to reor
 ####
 
 dU_GC_tidy_Stat%>%
-  ggplot(aes(x=Hours, y=mean, color=Strain, ymax=mean+se, ymin=mean-se)) +
+  ggplot(aes(x=Hours, y=mean_OD, color=Strain, ymax=mean_OD+se, ymin=mean_OD-se)) +
   geom_line(size=0.5) +
   geom_point(size=1.2) +
   geom_errorbar(width=0.1) +
+  theme_classic() +
   labs(title = bquote(bold("Strains lacking all dU repair components have the most severe fitness defect")), subtitle="85\u00B0C",
        y = bquote(bold("OD")[600][nm]),
        x = bquote(bold('Time (Hours)'))) +
@@ -414,7 +443,7 @@ dU_GC_tidy_Stat%>%
   scale_x_continuous(breaks=c(0, 4, 8, 12, 16, 20, 24), limits=c(0,26), expand = c(0,0)) +
   scale_y_continuous(breaks=c(0, 0.3, 0.6, 0.9, 1.2), limits=c(-0.05, 1.2), expand = c(0,0)) +
   scale_color_manual(values=c("pink", "brown4", "red3", "yellow3", "steelblue3", "orange2", "purple3", "green2", "black" ), name = "Strain", breaks=c("Blank", "TS559-Parent Strain", "\u0394TK0887-Endonuclease Q", "\u0394TK1898-Endonuclease MS", "\u0394TK2143-Uracil DNA Glycosylase","\u0394TK0887/\u0394TK1898", "\u0394TK0887/\u0394TK2143", "\u0394TK1898/\u0394TK2143", "\u0394TK0887/\u0394TK1898/\u0394TK2143")) +
-  geom_errorbar(width=0.1, aes(x=Hours, ymax = mean+sd, ymin = mean-sd, color=Strain)) 
+  geom_errorbar(width=0.1, aes(x=Hours, ymax = mean_OD+sd, ymin = mean_OD-sd, color_OD=Strain)) 
 
  
 ```
@@ -511,7 +540,7 @@ dU_GC_tidy_Stat%>%
     theme(axis.title.y = element_text(face = 'bold', size = 12)) +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
     theme(legend.text = element_text(face = 'bold', size = 8)) +
-    theme(legend.title = element_text( face = 'bold', size = 10)) 
+    theme(legend.title = element_text( face = 'bold', size = 10))
 
 ggsave("dU_Plot_85_Facet_Wrapped.jpg", dpi=2000)
 
@@ -557,7 +586,7 @@ dU_GC_tidy_Stat%>%
     theme(legend.text = element_text(face = 'bold', size = 8)) +
     theme(legend.title = element_text( face = 'bold', size = 10)) +
     theme(strip.text = element_text(face = "bold", size=6))+
-    theme(legend.position = "none") 
+    theme(legend.position = "none")
 
 ggsave("dU Growth Curve_Facet_Wrapped.jpg", dpi = 2000)
 

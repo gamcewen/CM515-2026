@@ -1,6 +1,6 @@
 ---
-title: "CM515_Assignment_13"
-author: "Your Name"
+title: "CM515_Assignment_13_mcewen"
+author: "Gavin McEwen"
 output:
   pdf_document: default
   html_document:
