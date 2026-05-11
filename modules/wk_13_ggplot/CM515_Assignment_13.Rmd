@@ -37,6 +37,8 @@ Knit the document into a PDF and submit it to Canvas by 04/27/2026 at 11:59 pm.
 library(knitr)
 library(tidyverse)
 library(ggplot2)
+library(readxl)
+library(ggpubr)
 
 ```
 
@@ -46,13 +48,16 @@ library(ggplot2)
 
 *******
 
-Description and Interpretation:
+Description and Interpretation: I loaded a dataset containing biochemical oxygen demand versus time into a scatter plot. As time increases, biochemical oxygen demand also increases.
 
 ```{r}
 ####
 #01#
 ####
-
+BOD %>%
+  ggplot(aes(x = Time, y = demand)) +
+  geom_point(size = 3, alpha = 0.5) +
+  labs(x = "Time (days)", y = "Oxygen demand (mg/l)")
 
 ```
 
@@ -62,13 +67,18 @@ Description and Interpretation:
 
 *******
 
-Description and Interpretation:
+Description and Interpretation: I fit a linear line through the 6 data points. The best-fit line has a slope of 1.7 (mg/l)/day and a y-intercept of 8.5 mg/l.
 
 ```{r}
 ####
 #02#
 ####
-#your code here
+BOD %>%
+  ggplot(aes(x = Time, y = demand)) +
+  geom_point(size = 3, alpha = 0.5) +
+  geom_smooth(method = "lm", color = "black") +
+  labs(x = "Time (days)", y = "Oxygen demand (mg/l)") +
+  stat_regline_equation(label.x = 6, label.y = 22)
 
 ```
 
@@ -76,13 +86,22 @@ Description and Interpretation:
 
 *******
 
-Description and Interpretation:
+Description and Interpretation: I set the shape of each point on my plot to diamonds. I also decreased the transparency (i.e., increased the opaqueness) and scales the colors along a "firebrick" gradient, which offered good contrast.
 
 ```{r}
 ####
 #03#
 ####
-#your code here
+BOD %>%
+  ggplot(aes(x = Time, y = demand, colour = demand)) +
+  geom_point(size = 3,
+             alpha = 1,
+             shape = 18) +
+  geom_smooth(method = "lm", color = "black") +
+  labs(x = "Time (days)", y = "Oxygen demand (mg/l)") +
+  stat_regline_equation(label.x = 6, label.y = 22) +
+  scale_color_gradient(low = "firebrick1",
+                       high = "firebrick4")
 
 ```
 
@@ -92,13 +111,15 @@ Description and Interpretation:
 
 *******
 
-Description and Interpretation:
+Description and Interpretation: I loaded a dataset containing dry weight yields of plants under different treatment conditions. The units of weight are unspecified. Treatment 2 increased dry weight versus control, while treatment 1 decreased try weight versus control.
 
 ```{r}
 ####
 #04#
 ####
-#your code here
+PlantGrowth %>%
+  ggplot(aes(x = group, y = weight)) +
+  geom_boxplot(width = 0.8)
 
 ```
 
@@ -108,13 +129,16 @@ Description and Interpretation:
 
 ******
 
-Description and Interpretation:
+Description and Interpretation: I overlaid individual data points on the box plot containing dry weights of plants under different treatment conditions. The default point size and transparency provided enough contrast over the box plot outlines, and therefore did not need to be changed.
 
 ```{r}
 ####
 #05#
 ####
-#your code here
+PlantGrowth %>%
+  ggplot(aes(x = group, y = weight)) +
+  geom_boxplot(width = 0.8) +
+  geom_jitter()
 
 ```
 
@@ -122,13 +146,25 @@ Description and Interpretation:
 
 ******
 
-Description and Interpretation:
+Description and Interpretation: I loaded powder x-ray diffraction (PXRD) data that I collected. When plotting PXRD (intensity versus angle of detection) data for publication, it is standard to have labeled major ticks every 10 degrees and unlabeled minor ticks every 2 degrees. It is also standard to have no ticks on the y-axis, as it is unitless "intensity."
 
 ```{r}
 ####
 #06#
 ####
-#your code here
+pxrd_7day_rxn = read_excel("20260407_no_peptide_7day_rxn_exported.xlsx")
+
+names(pxrd_7day_rxn)[1:2] = c("2theta", "intensity")
+
+pxrd_7day_rxn %>%
+  ggplot(aes(x = `2theta`, y = `intensity`)) +
+  geom_line() +
+  scale_x_continuous(breaks = seq(0, 60, 10), minor_breaks = seq(0, 60, 2), guide = guide_axis(minor.ticks = TRUE)) +
+  scale_y_continuous(labels = NULL) +
+  labs(x = expression(2*theta~(degree)), y = "Intensity") +
+  theme_classic() +
+  theme(axis.ticks.y = element_blank())
+
 
 ```
 
@@ -138,12 +174,31 @@ Description and Interpretation:
 
 ******
 
-Description and Interpretation:
+Description and Interpretation: This is also PXRD data collected at different timepoints (30 min, 23 hr, and 47 hr). I pivoted the data to create a new variable of time since reaction started, then used facet_wrap() to plot the pxrd spectra from each timepoint side-by-side.
 
 ```{r}
 #07#
 ####
-#your code here
+pxrd_timecourse = read_excel("no_peptide_timecourse.xlsx")
+
+pxrd_timecourse_long = pxrd_timecourse %>%
+  pivot_longer(cols = c(`30`, `1380`, `2820`),
+               names_to = "time_minutes",
+               values_to = "intensities")
+
+pxrd_timecourse_long$time_minutes = factor(pxrd_timecourse_long$time_minutes,
+                                           levels = c("30", "1380", "2820"))
+new_labels = c("30" = "30 Minutes", "1380" = "23 Hours", "2820" = "47 Hours")
+
+pxrd_timecourse_long %>%
+  ggplot(aes(x = `2theta`, y = intensities)) +
+  facet_wrap(~ time_minutes, 
+             labeller = as_labeller(new_labels),
+             scales = "free_y") +
+  scale_y_continuous(limits = c(-5, 30)) +
+  labs(x = expression(2*theta~(degree)), y = "Intensity") +
+  geom_line() +
+  theme_classic()
 
 ```
 
@@ -151,12 +206,25 @@ Description and Interpretation:
 
 ******
 
-Description and Interpretation:
+Description and Interpretation: I reversed the order of my PXRD spectra so that they are listed in descending rather than ascending time incremenets. It makes no sense to do this, but that's what the question asked me to do. I also included a color gradient so that higher intensity values become more red.
 
 ```{r}
 #08#
 ####
-#your code here
+pxrd_timecourse_long$time_minutes = factor(pxrd_timecourse_long$time_minutes,
+                                           levels = c("2820", "1380", "30"))
+new_labels = c("30" = "30 Minutes", "1380" = "23 Hours", "2820" = "47 Hours")
+
+pxrd_timecourse_long %>%
+  ggplot(aes(x = `2theta`, y = intensities, colour = intensities)) +
+  facet_wrap(~ time_minutes, 
+             labeller = as_labeller(new_labels),
+             scales = "free_y") +
+  scale_y_continuous(limits = c(-5, 30)) +
+  scale_color_gradient(low = "grey80", high = "firebrick4") +
+  labs(x = expression(2*theta~(degree)), y = "Intensity") +
+  geom_line() +
+  theme_classic()
 
 ```
 
@@ -166,26 +234,46 @@ Description and Interpretation:
 
 ******
 
-Description and Interpretation:
+Description and Interpretation: I loaded a dataset containing the body mass in grams of penguins from different species that were found in the Palmer Archipelago. I plotted their body masses versus species in a violin plot, which shows the shape and distribution of the data.
 
 ```{r}
 ####
 #09#
 ####
-#your code here 
+penguins %>%
+  ggplot(aes(x = species, y = body_mass)) +
+  labs(x = "Species", y = "Body mass (g)") +
+  geom_violin() +
+  theme_classic()
+
 ```
 
 # 10. Make a Plot Using a ggplot Extension That Was Not Covered in Class. Explain what the extension does. (4pts)
 
 ******
 
-Description and Interpretation:
+Description and Interpretation: I loaded a dataset containing latitude versus longitude values of earthquakes colorcoded by their magnitudes. I used the package ggrepel, which should repel overlapping text labels. However, I found that I still had issues with text labels overlapping with datapoints, despite extensive attempts to optimize point.padding.
 
 ```{r}
 ####
 #10#
 ####
-#your code here 
+library(ggrepel)
+
+quakes %>%
+  ggplot(aes(x = long, y = lat, colour = mag)) +
+  geom_label_repel(
+    data = ~ dplyr::filter(.x, mag >= 6),
+    aes(label = mag),
+    force = 5,
+    box.padding = 0.5,
+    point.padding = 0.5,
+    min.segment.length = 0,
+    max.overlaps = Inf) +
+  labs(x = "Longitude (degrees)", y = "Latitude (degrees)") +
+  geom_point() +
+  theme_classic()
+
 ```
 
 ******

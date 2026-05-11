@@ -1,0 +1,36 @@
+---
+title: "Week 14 Assignment - McEwen"
+author: "Gavin McEwen"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r MutationRates}
+library(knitr)
+library(tidyverse)
+library(ggplot2)
+library(readxl)
+library(ggpubr)
+
+MutationRates = read_csv("MutationRate.csv")
+
+MutationRates %>%
+  ggplot(aes(x = Genotype, y = MutationRate)) +
+  geom_boxplot() +
+  #stat_summary(fun = mean, geom = "bar") +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  facet_grid(Genome ~ MutationType) +
+  labs(y = "Mutation Rate") +
+  scale_y_log10() +
+  theme_bw()
+```
+
+# Explanantion of data visualization choices
+
+I chose to visualize the data in 2D matrix using facet_grid. This allows easy comparison of mutation rates of different types (indels vs. substitution), as well as comparison of mutation rates in the mito versus plastid genome. It is also possible to achieve this same result by color coding either mutation type or genome, but using facet_grid lead to a simpler structure that is easier to comprehend quickly. It also does not depend on color or grayscale shading. I chose to use a boxplot to visualize the spread of the data. Although there are drawbacks to box plots, as very different data spreads can produce identical box plots shapes, there are only three replicates per group, and therefore boxplots do an adequate job of showing the actual data spread. I chose to visualize the y-axis mutation rate data on a logarithmic scale rather than a linear scale to highlight the slight differences in mutation rate between radA and Wild Type genotypes, which are almost indiscernible when visualized using a linear scale.
